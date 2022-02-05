@@ -1,3 +1,7 @@
+# Requirements
+
+[Node.js](https://nodejs.org/en/)
+
 # How to use
 
 1. Run
