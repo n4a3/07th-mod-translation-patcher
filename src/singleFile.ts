@@ -1,18 +1,16 @@
 import { FOLDERS } from "./consts";
-import { fixLocStrings } from "./utils/fixLocStrings";
+import { fixLocStrings, fixNames } from "./utils/fixLocStrings";
 
 import { getStrings } from "./utils/getStrings";
 import { replaceContent } from "./utils/replaceContent";
 import { resolvePath } from "./utils/resolvePath";
 import { saveFile } from "./utils/saveFile";
-import { verify } from "./utils/verify";
+import { verify, verifyLocMap } from "./utils/verify";
 
 export const singleFile = async (
   fileName: string,
   addToLog: (fileName: string, errors: any) => void
 ): Promise<void> => {
-  let error = null;
-
   const [engPath, locPath, locSavePath] = await Promise.all([
     resolvePath([FOLDERS.eng, fileName]),
     resolvePath([FOLDERS.locOld, fileName]),
@@ -25,35 +23,49 @@ export const singleFile = async (
   engErrors && addToLog(`${FOLDERS.eng}/${fileName}`, engErrors);
   locErrors && addToLog(`${FOLDERS.locOld}/${fileName}`, locErrors);
 
-  const [fixedlocStrings, updatedStrings] = fixLocStrings(
-    engStrings,
-    locStrings
-  );
-
-  const autoFixed = updatedStrings.size > 0;
+  const [fixedLocStrings, autoFixed] = fixLocStrings(engStrings, locStrings);
 
   if (autoFixed) {
     const updatedStringsError = new Map([
-      [
-        -2,
-        [
-          `${fileName} was auto-fixed, please check next strings in patched localized script:`,
-          updatedStrings,
-        ],
-      ],
+      [-2, `${fileName} was auto-fixed, it may contain some errors`],
     ]);
 
     addToLog(fileName, updatedStringsError);
   }
 
-  error = verify(engStrings, fixedlocStrings);
+  const errors = verify(engStrings, fixedLocStrings);
 
-  if (error) {
-    addToLog(fileName, error);
+  if (errors) {
+    addToLog(fileName, errors);
     return;
   }
 
-  const locContent = await replaceContent(engPath, engStrings, fixedlocStrings);
+  const fixedLocStringsWithNames = fixNames(fixedLocStrings);
+
+  const untranslatedStrings = verifyLocMap(
+    engStrings,
+    fixedLocStringsWithNames
+  );
+
+  if (untranslatedStrings) {
+    const untranslatedStringsError = new Map([
+      [
+        -3,
+        [
+          `${fileName} contains some untranslated strings:`,
+          untranslatedStrings,
+        ],
+      ],
+    ]);
+
+    addToLog(fileName, untranslatedStringsError);
+  }
+
+  const locContent = await replaceContent(
+    engPath,
+    engStrings,
+    fixedLocStringsWithNames
+  );
 
   saveFile(locSavePath, locContent);
   !autoFixed && console.log(fileName, "patched successfully!");

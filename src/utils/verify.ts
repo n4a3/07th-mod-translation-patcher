@@ -1,5 +1,7 @@
 import { LocaleMap, StrError } from "../types";
 
+const IGNORE_REGEX = /\?\?\?|\.\.\.|size/;
+
 const notFoundArr = ["!!not found jpn!!", "!!not found loc!!"];
 
 export const verify = (
@@ -16,10 +18,10 @@ export const verify = (
   }
 
   for (const [id, [jpnEngStr, engStr]] of engMap) {
-    const [jpnlocStr, locStr] = locMap.get(id) || notFoundArr;
+    const [jpnLocStr, locStr] = locMap.get(id) || notFoundArr;
 
-    if (jpnEngStr !== jpnlocStr) {
-      errors.set(id, [jpnEngStr, engStr, jpnlocStr, locStr]);
+    if (jpnEngStr !== jpnLocStr) {
+      errors.set(id, [jpnEngStr, engStr, jpnLocStr, locStr]);
     }
   }
 
@@ -30,25 +32,25 @@ export const verify = (
   return null;
 };
 
-const verifyLocMap = (locMap: LocaleMap) => {
+export const verifyLocMap = (
+  engMap: LocaleMap,
+  locMap: LocaleMap
+): null | Map<number, string> => {
   const errors = new Map();
 
-  for (const [id, [_, locStr]] of locMap) {
-    if (/[a-zA-Z]/.test(locStr)) {
-      const hasHTMLTags = /<.*>/.test(locStr);
-      const hasXCensor = /[xX]*/.test(locStr);
+  for (const [id, [jpnEngStr, engStr]] of engMap) {
+    if (engStr.search(IGNORE_REGEX)) continue;
 
-      const ignore = hasHTMLTags || hasXCensor;
+    const [jpnLocStr, locStr] = locMap.get(id) || notFoundArr;
 
-      !ignore && errors.set(id, locStr);
+    if (jpnEngStr === jpnLocStr && engStr === locStr) {
+      errors.set(id, engStr);
     }
   }
 
   if (errors.size) {
-    console.log(errors);
-
-    return false;
+    return errors;
   }
 
-  return true;
+  return null;
 };

@@ -1,42 +1,70 @@
 import { LocaleMap } from "../types";
+import names from "../names.json";
 
 const FIX_STR_TRIGGER = '"<color';
+const NAME_REGEX = />(.*)</;
 
 export const fixLocStrings = (
   engMap: LocaleMap,
   locMap: LocaleMap
-): [fixedlocMap: LocaleMap, updatedStrings: Set<string>] => {
+): [fixedLocMap: LocaleMap, autoFixed: boolean] => {
   let offset = 0;
-
-  const updatedStrings = new Set<string>();
 
   const engSize = engMap.size;
   const locSize = locMap.size;
 
-  if (engSize === locSize) return [locMap, updatedStrings];
+  if (engSize === locSize) return [locMap, false];
 
-  const fixedlocMap: LocaleMap = new Map();
+  const fixedLocMap: LocaleMap = new Map();
 
   for (const [id, [jpnEngStr, engStr]] of engMap) {
-    const newId = fixedlocMap.size + 1;
+    const newId = fixedLocMap.size + 1;
 
-    const [jpnlocStr, locStr] = locMap.get(id - offset) || ["", ""];
+    const [jpnLocStr, locStr] = locMap.get(id - offset) || ["", ""];
 
-    const addToloc =
+    const addToLoc =
       jpnEngStr.includes(FIX_STR_TRIGGER) &&
-      !jpnlocStr.includes(FIX_STR_TRIGGER);
+      !jpnLocStr.includes(FIX_STR_TRIGGER);
 
-    if (jpnEngStr !== jpnlocStr) {
-      if (addToloc) {
-        fixedlocMap.set(newId, [jpnEngStr, engStr]);
-        updatedStrings.add(engStr);
+    if (jpnEngStr !== jpnLocStr) {
+      if (addToLoc) {
+        fixedLocMap.set(newId, [jpnEngStr, engStr]);
         offset++;
         continue;
       }
     }
 
-    fixedlocMap.set(newId, [jpnlocStr, locStr]);
+    fixedLocMap.set(newId, [jpnLocStr, locStr]);
   }
 
-  return [fixedlocMap, updatedStrings];
+  return [fixedLocMap, true];
+};
+
+export const fixNames = (locMap: LocaleMap): LocaleMap => {
+  const fixedLocMap: LocaleMap = new Map();
+
+  const engNames = Object.getOwnPropertyNames(names);
+
+  for (const [id, [jpnLocStr, locStr]] of locMap) {
+    const engName = (locStr.match(NAME_REGEX) ?? [])[1];
+
+    if (!engName) {
+      fixedLocMap.set(id, [jpnLocStr, locStr]);
+      continue;
+    }
+
+    const isNameExist = engNames.includes(engName);
+
+    if (!isNameExist) {
+      fixedLocMap.set(id, [jpnLocStr, locStr]);
+      continue;
+    }
+
+    const locName = names[engName as keyof typeof names] ?? engName;
+    const fixedLocStr = locStr.replace(engName, locName);
+
+    fixedLocMap.set(id, [jpnLocStr, fixedLocStr]);
+  }
+
+  return fixedLocMap;
 };

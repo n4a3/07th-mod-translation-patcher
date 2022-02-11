@@ -5,8 +5,8 @@ export const emulateOLFn = (fn: string): [string, string] => {
     if (!strings.length) return;
 
     const fixedStrings = strings
-      .map((str) => `"${str.replace(/\"/gm, '\\"')}"`)
-      .map((str) => str.replace("　", ""))
+      .map((str) => `"${str.replaceAll(/\"/gm, '\\"')}"`)
+      .map((str) => str.replaceAll("　", ""))
       .filter((str) => str.length > 0);
 
     if (fixedStrings.length < 2) return;

@@ -1,7 +1,7 @@
 export type StrError = [
   jpnEngStr: string,
   engStr: string,
-  jpnlocStr: string,
+  jpnLocStr: string,
   locStr: string
 ];
 
