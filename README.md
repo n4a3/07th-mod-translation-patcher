@@ -8,6 +8,8 @@ https://user-images.githubusercontent.com/43886362/152984526-08593ce9-57b4-475d-
 
 # How to use
 
+1. Clone or download this project
+
 1. Run
 
 ```
@@ -20,11 +22,11 @@ or
 npm i
 ```
 
-2. Place original scripts from 07th mod to Update_end folder
+1. Place original scripts from 07th mod to Update_end folder
 
-3. Place localized scripts to Update_loc folder
+1. Place localized scripts to Update_loc folder
 
-4. Run
+1. Run
 
 ```
 yarn start
@@ -50,4 +52,4 @@ npm run start -s <file_name>.txt
 
 to patch one file
 
-5. You can find patched scripts in Update_loc_new folder
+1. You can find patched scripts in Update_loc_new folder
